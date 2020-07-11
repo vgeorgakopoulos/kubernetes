@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-cm-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: mysql
+  template:    # pod template
+    metadata:
+      labels:
+        component: mysql
+    spec:     
+      # initContainers:
+      #   - name: init-mysql
+      #     image: mysql
+      #     ports:
+      #       - containerPort: 3306
+      #     command:
+      #       - bash 
+      #       - "-c"
+      #       - | 
+      #         cat /tmp/vgeorga/test/my.cnf > /etc/mysql/conf.d/mysql.cnf
+      #     volumeMounts:
+      #       - name: mysql-config-map
+      #         mountPath: /tmp/vgeorga/test
+      #     env:
+      #       - name: MYSQL_ROOT_PASSWORD
+      #         valueFrom:
+      #           secretKeyRef:
+      #             name: mysqlpass
+      #             key: MYSQL_ROOT_PASSWORD # secret created using > kubectl create secret generic mysqlpass --from-literal MYSQL_ROOT_PASSWORD='r00t!@#$'
+      #       - name: MYSQL_DATABASE
+      #         value: "TEST"
+
+      containers:   # container specification
+        - name: mysql 
+          image: mysql  # DO NOT USE mysql:5.7 IT CRASHES
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-config-map
+              mountPath: /etc/mysql/conf.d
+            - name: mysql-cnfmp-dbinit
+              mountPath: /docker-entrypoint-initdb.d
+            - name: mysql-data-backup
+              mountPath: /var/lib/mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlpass
+                  key: MYSQL_ROOT_PASSWORD # secret created using > kubectl create secret generic mysqlpass --from-literal MYSQL_ROOT_PASSWORD='r00t!@#$'
+            - name: MYSQL_DATABASE
+              value: "school"
+      volumes:
+        - name: mysql-config-map
+          configMap:
+            name: mysql-demo-config  # value from .medata.name of the myqsl-configmap.yaml file
+            items:
+              - key: my.cnf
+                path: mysql.cnf
+        - name: mysql-cnfmp-dbinit
+          configMap:
+            name: mysql-db-config  # value from .medata.name of the myqsl-configmap.yaml file
+            items:
+              - key: school.sql
+                path: school.sql
+        - name: mysql-data-backup
+          persistentVolumeClaim:
+            claimName: mysql-pvc # mysql-pv-claim # 

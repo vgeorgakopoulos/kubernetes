@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: initdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: mysql
+  template:
+    metadata:
+      labels:
+        component: mysql
+    spec:
+      containers:
+        - image: vgeorga/mysql-init:v5
+          name: mysql-init
+          # ports:
+          #     - containerPort: 3306    
+          # env:
+          #     - name: MYSQL_ROOT_PASSWORD
+          #       value: "root"
+          #     - name: MYSQL_USER
+              #   value: "root"
+              # - name: MYSQL_PASSWORD
+              #   value: "root"
+              # - name: MYSQL_DATABASE
+              #   value: "mydatabase"

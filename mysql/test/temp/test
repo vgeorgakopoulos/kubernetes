@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-cm-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: mysql
+  template:    # pod template
+    metadata:
+      labels:
+        component: mysql
+    spec:     
+      volumes:
+        - name: conf
+          emptyDir: {}
+        - name: mysql-config-map
+          configMap:
+            name: mysql-demo-config  # value from .medata.name of the myqsl-configmap.yaml file
+            items:
+              - key: my.cnf
+                path: my.cnf
+      initContainers:
+        - name: init-mysql
+          image: mysql
+          command:
+            - bash 
+            - "-c"
+            - | 
+              cp /tmp/vgeorga/test/my.cnf /etc/mysql/conf.d
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/mysql/conf.d
+            - name: mysql-config-map
+              mountPath: /tmp/vgeorga/test
+      containers:   # container specification
+        - name: mysql 
+          image: mysql
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/mysql/conf.d
+            - name: mysql-config-map
+              mountPath: /tmp/vgeorga/test
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlpass
+                  key: MYSQL_ROOT_PASSWORD # secret created using > kubectl create secret generic mysqlpass --from-literal MYSQL_ROOT_PASSWORD='r00t!@#$'
+            - name: MYSQL_DATABASE
+              value: TEST
+------------------------------------------------------
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-cm-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:azaaa
+      component: mysql
+  template:    # pod template
+    metadata:
+      labels:
+        component: mysql
+    spec:     
+      volumes:
+        - name: conf
+          emptyDir: {}
+        - name: mysql-config-map
+          configMap:
+            name: mysql-demo-config  # value from .medata.name of the myqsl-configmap.yaml file
+            items:
+              - key: my.cnf
+                path: my.cnf
+        - name: mysql-data-backup
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+      initContainers:
+        - name: init-mysql
+          image: mysql
+          command:
+            - bash 
+            - "-c"
+            - | 
+              cp /tmp/vgeorga/test/my.cnf /etc/mysql/conf.d
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/mysql/conf.d
+            - name: mysql-config-map
+              mountPath: /tmp/vgeorga/test
+      containers:   # container specification
+        - name: mysql 
+          image: mysql
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/mysql/conf.d
+            - name: mysql-config-map
+              mountPath: /tmp/vgeorga/test
+            - name: mysql-data-backup
+              mountPath: /var/lib/mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlpass
+                  key: MYSQL_ROOT_PASSWORD # secret created using > kubectl create secret generic mysqlpass --from-literal MYSQL_ROOT_PASSWORD='r00t!@#$'
+            - name: MYSQL_DATABASE
+              value: TEST
